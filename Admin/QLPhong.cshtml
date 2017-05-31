@@ -1,0 +1,215 @@
+﻿@{
+    Layout = "~/_NoHeader.cshtml";
+    PageData["Title"] = "Danh sách phòng";
+
+    var db = Database.Open("SiteDB");
+    var logText = "";
+    var filter = "Tất cả";
+    if (IsPost) {
+        if (Request.Form["id"] != null) {
+            var id = Request.Form["id"];
+            var isAvaiable = Request.Form["isAvaiable"].AsBool() ? 0 : 1;
+            db.Execute("update dsphong set trangthai = @0 where id = @1", isAvaiable, id);
+        };
+
+        if (Request.Form["request"] == "edit-room") {
+            int maphong = Request.Form["maphong"].AsInt();
+            var tenphong = Request.Form["tenphong"];
+            var mota = Request.Form["mota"];
+            int soluong = Request.Form["soluong"].AsInt();
+            var canhquan = Request.Form["canhquan"];
+            var linkanh = Request.Form["linkanh"];
+            var trangtri = Request.Form["trangtri"];
+            var phongngu = Request.Form["phongngu"];
+            var phongtam = Request.Form["phongtam"];
+            var dientich = Request.Form["dientich"];
+            var giaphong = Request.Form["giaphong"];
+            int khua = Request.Form["khua"].AsInt();
+            db.Execute("update phong set tenphong = @0, mota = @1, soluong = @2, canhquan = @3, trangtri = @4, phongngu = @5, phongtam = @6, dientich = @7, giaphong = @8, khuA = @9 where maphong = @10;", tenphong, mota, soluong, canhquan, trangtri, phongngu, phongtam, dientich, giaphong, khua, maphong);
+            db.Execute("update phong_img set linkanh = @0 where maphong = @1;", linkanh, maphong);
+        };
+    };
+    if (!String.IsNullOrWhiteSpace(Request.Form["filter"])) {
+        filter = Request.Form["filter"].Trim();
+    };
+    var query = "";
+    int successedRows = 0;
+    switch (filter) {
+        case "Tất cả":
+            query = "select * from dsphong";
+            successedRows = db.QueryValue("select count (id) from dsphong");
+            logText = ">> Tìm thấy tổng cộng " + successedRows + " phòng";
+            break;
+        case "Khu A":
+            query = "select dsphong.* from dsphong, phong where dsphong.loaiphong = phong.maphong and phong.khuA = 1";
+            successedRows = db.QueryValue("select count (dsphong.id) from dsphong, phong where dsphong.loaiphong = phong.maphong and phong.khuA = 1");
+            logText = ">> Tìm thấy tổng cộng " + successedRows + " phòng ở khu A";
+            break;
+        case "Khu B":
+            query = "select dsphong.* from dsphong, phong where dsphong.loaiphong = phong.maphong and phong.khuA = 0";
+            successedRows = db.QueryValue("select count (dsphong.id) from dsphong, phong where dsphong.loaiphong = phong.maphong and phong.khuA = 0");
+            logText = ">> Tìm thấy tổng cộng " + successedRows + " phòng ở khu B";
+            break;
+    }
+    var rows = db.Query(query);
+}
+
+@section main {
+    <main id="adminbox">
+        <div class="admin-title">
+            <h3>@Page.Title</h3>
+        </div>
+        <div class="admin-toolbar row flex-end">
+            <div class="col s1 left-align">
+                <div id="room-filter" class="admin-tool-icon" style="position: relative; cursor: pointer;">
+                    <span class="normal-txt">@filter</span>&nbsp;
+                    <i class="fa fa-caret-down normal-txt"></i>
+                    <ul id="filter-select" class="format-ul filter-ul">
+                        <li>Tất cả</li>
+                        <li>Khu A</li>
+                        <li>Khu B</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col s11 right-align">
+                <ul id="room-type-list">
+                    <li class="nav-item admin-tool-icon">
+                        <i class="fa fa-check-square">
+                            <span>&nbsp;Đã đặt phòng</span>
+                        </i>
+                    </li>
+                    @foreach (var phong in db.Query("select DISTINCT dsphong.loaiphong, phong.tenphong, phong.maphong from DSphong, phong where dsphong.loaiphong = phong.maphong")) {
+                        var iClass = "";
+                        switch ((int)@phong.LoaiPhong) {
+                            case 1:
+                                iClass = "PhongLoai1";
+                                break;
+                            case 2:
+                                iClass = "PhongLoai2";
+                                break;
+                            case 3:
+                                iClass = "PhongLoai3";
+                                break;
+                            case 4:
+                                iClass = "PhongLoai4";
+                                break;
+                            case 5:
+                                iClass = "PhongLoai5";
+                                break;
+                            case 6:
+                                iClass = "PhongLoai6";
+                                break;
+                        };
+                        <li class="nav-item admin-tool-icon">
+                            <i class="fa fa-square @iClass right-border room-edit-item" data-maphong="@phong.maphong">
+                                <span>&nbsp;@phong.TenPhong</span>
+                            </i>
+                        </li>
+                    }
+                    <li class="nav-item admin-tool-icon">
+                        <i class="right-border"><span>Sửa phòng:&nbsp;</span></i>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        @if (IsPost && (Request.Form["request"] == "load-room-to-edit")) {
+            var roomID = Request.Form["roomID"].AsInt();
+            var anh = db.QuerySingle("select LinkAnh from Phong_img where maphong = @0 order by MaAnh desc OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY; ", roomID);
+            var row = db.QuerySingle("select * from phong where maphong = @0", roomID);
+            var khuA = (@row.khuA) ? "checked" : "";
+
+            <div id="room-details-display" style="padding: 20px 30px;">                
+                <div class="row">
+                    <ul class="edit-room col s12">
+                        <li>
+                            Loại phòng: <span id="spn-tenphong" class="editable">@row.TenPhong</span>
+                        </li>
+                        <li>
+                            Link ảnh: <span id="spn-linkanh" class="editable">@anh.LinkAnh</span>
+                        </li>
+                        <li>
+                            Giá phòng: $<span id="spn-giaphong" class="editable">@row.GiaPhong</span>
+                        </li>
+                        <li>
+                            Số lượng phòng: <span id="spn-soluong" class="editable">@row.SoLuong</span> phòng
+                        </li>
+                        <li>
+                            Cảnh quan: <span id="spn-canhquan" class="editable">@row.CanhQuan</span>
+                        </li>
+                        <li>
+                            Trang trí: <span id="spn-trangtri" class="editable">@row.TrangTri</span>
+                        </li>
+                        <li>
+                            Phòng ngủ: <span id="spn-phongngu" class="editable">@row.PhongNgu</span>
+                        </li>
+                        <li>
+                            Phòng Tắm: <span id="spn-phongtam" class="editable">@row.PhongTam</span>
+                        </li>
+                        <li>
+                            Mô tả: <span id="spn-mota" class="editable">@row.MoTa</span>
+                        </li>
+                        <li>
+                            Diện tích: <span id="spn-dientich" class="editable">@row.DienTich</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="row py-10">                     
+                    <input type="checkbox" id="khuA" @khuA style="width: auto; height: auto;" />
+                    <label for="khuA">&nbsp;Khu A</label>
+                </div>
+                <div class="row py-10">
+                    <a id="submit-edit-room" data-maphong="@row.MaPhong" class="btn-flat" href="#">
+                        Cập nhật
+                    </a>
+                </div>
+            </div>
+        }
+        <div id="TTPhong">
+            @{
+                foreach (var stsrow in rows) {
+                    var iClass = "";
+                    var status = ((bool)@stsrow.TrangThai) ? 1 : 0;
+                    var iTrangThai = "";
+                    if ((bool)@stsrow.TrangThai) {
+                        iTrangThai = "fa-check-square";
+                    } else {
+                        iTrangThai = "fa-square";
+                    }
+                    switch ((int)@stsrow.LoaiPhong) {
+                        case 1:
+                            iClass = "PhongLoai1";
+                            break;
+                        case 2:
+                            iClass = "PhongLoai2";
+                            break;
+                        case 3:
+                            iClass = "PhongLoai3";
+                            break;
+                        case 4:
+                            iClass = "PhongLoai4";
+                            break;
+                        case 5:
+                            iClass = "PhongLoai5";
+                            break;
+                        case 6:
+                            iClass = "PhongLoai6";
+                            break;
+                    }
+
+                    <div class="phong tooltip">
+                        <i class="fa @iTrangThai @iClass fa-2x" data-roomid="@stsrow.id" data-status="@status" aria-hidden="true"></i>
+                        <span class="tooltiptext">
+                            @stsrow.SoPhong
+                        </span>
+                    </div>
+                };
+            }
+        </div>
+        <div class="row" style="border-top: 1px solid #C5CAE9; padding: 10px 20px;">
+            <span id="spn-status">@logText</span>
+        </div>
+    </main>
+}
+@section Scripts {
+    <script src="~/Scripts/siteScripts/admin-room.js"></script>
+}

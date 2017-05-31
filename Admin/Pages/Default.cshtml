@@ -1,0 +1,202 @@
+﻿@{
+    Layout = "~/_NoHeader.cshtml";
+    PageData["Title"] = "Quản lý trang";
+
+    var db = Database.Open("SiteDB");
+    var keyword = "";
+    var pageIndex = 1;
+    var filter = "";
+    var status = ""; var logText = "";
+
+    if (IsPost && !string.IsNullOrEmpty(Request.Form["request"])) {
+        //----- sua trang thai
+        switch (Request.Form["request"]) {
+            case "delete":// xoa vinh vien
+                // xoa file trong thu muc posts
+                var source = db.QueryValue("select source from page where id = @0", Request.Form["rowID"]);
+                var fullPath = Server.MapPath("~" + source.Trim() + ".cshtml");
+                if (File.Exists(fullPath)) {
+                    File.Delete(fullPath);
+                };
+                // xoa tren database
+                int success = db.Execute("DELETE FROM Page WHERE id = @0", Request.Form["rowID"]);
+                break;
+            case "2Trash":// dua vao thung rac
+                db.Execute("update Page set status = 3 WHERE id = @0", Request.Form["rowID"]);
+                break;
+            /*
+        case "update-status":
+            var daxuly = (Request.Form["daxuly"].AsBool()) ? 1 : 0;
+            var updateCommand = "UPDATE dsdatphong SET daxuly = @0 WHERE id = @1";
+            db.Execute(updateCommand, daxuly, Request.Form["id"]);
+            break;
+            */
+            default:
+                break;
+        };
+    };
+
+    // loadpage - search - nextpage
+    keyword = Request.Form["keyword"].IsEmpty() ? "" : Request.Form["keyword"];
+    pageIndex = Request.Form["pageIndex"].IsEmpty() ? 1 : Request.Form["pageIndex"].AsInt();
+    switch (Request.Form["filter"]) {
+        case "Trang đã đăng":
+            status = "AND status = 1 ";
+            break;
+        case "Bản nháp":
+            status = "AND status = 2 ";
+            break;
+        case "Thùng rác":
+            status = "AND status = 3 ";
+            break;
+        default:
+            status = " ";
+            break;
+    };
+    filter = String.IsNullOrEmpty(Request.Form["filter"]) ? "Hiển thị tất cả" : Request.Form["filter"];
+
+    var queryCommand = "SELECT * FROM Page WHERE (title like @0 or date like @0) " + status + " ORDER BY id desc OFFSET @1 ROWS FETCH NEXT 10 ROWS ONLY;";
+    var count = db.QueryValue("SELECT COUNT (id) FROM Page WHERE (title like @0 or date like @0) " + status, "%" + keyword + "%");
+    var location = (filter == "Hiển thị tất cả") ? "" : "ở '" + filter + "'";
+    logText = String.IsNullOrEmpty(keyword) ? " >> Tìm được " + count + " kết quả " + location : " >> Tìm được " + count + " kết quả "+ location +" với từ khóa '" + keyword + "'";
+    var rows = db.Query(queryCommand, "%" + keyword + "%", (pageIndex - 1) * 10);
+}
+
+@section main {
+    <main id="adminbox">
+        <div class="admin-title">
+            <h3>@Page.Title</h3>
+        </div>
+        <div class="admin-toolbar row flex-end">
+            <div class="col s5 left-align">
+                <div id="page-filter" class="admin-tool-icon" style="position: relative; cursor: pointer;">
+                    <span>@filter</span>&nbsp;
+                    <i class="fa fa-caret-down"></i>
+                    <ul id="filter-select" class="not-display format-ul filter-ul">
+                        <li><p>Hiển thị tất cả</p></li>
+                        <li><p>Trang đã đăng</p></li>
+                        <li><p>Bản nháp</p></li>
+                        <li><p>Thùng rác</p></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col s2 page-nav center-align">
+                <span class="admin-tool-icon">
+                    <i id="btn-leftBkPage" class="btn-BkPage fa fa-caret-left admin-icon"></i>
+                </span>
+                <span class="admin-tool-icon admin-icon">
+                    <span id="spn-pageIndex" data-count="@count">@pageIndex</span>
+                </span>
+                <span class="admin-tool-icon">
+                    <i id="btn-rightBkPage" class="btn-BkPage fa fa-caret-right admin-icon"></i>
+                </span>
+            </div>
+            <div class="col s5 right-align">
+                <a class="nav-item admin-tool-icon right-border" href="~/admin/pages/newpage">
+                    <i class="fa fa-plus admin-icon">
+                        <span>&nbsp;Thêm</span>
+                    </i>
+                </a>
+                <a class="nav-item admin-tool-icon" href="#">
+                    <i id="isearchReset" class="fa fa-eraser admin-icon">
+                        <span>&nbsp;Bỏ lọc</span>
+                    </i>
+                </a>
+            </div>
+            <div class="search-field col s2" style="position: relative;">
+                <input id="ipt-searchPage" type="text" placeholder="tìm kiếm" value="@keyword" />
+                <i id="btn-searchPage" class="fa fa-search admin-tool-icon admin-icon"></i>
+            </div>
+        </div>
+        <div id="dsDatPhong">
+            <table class="ldk-table page-list-table" style="width: 100%;">
+                <thead>
+                    <tr>
+                        <th>
+                            Id
+                        </th>
+                        <th>
+                            Tiêu đề
+                        </th>
+                        <th>
+                            Ngày đăng
+                        </th>
+                        <th>
+                            Xem
+                        </th>
+                        <th>
+                            Sửa
+                        </th>
+                        <th>
+                            Trạng thái
+                        </th>
+                        <th>
+                            Chuyển đến
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in rows) {
+                        <tr data-id="@row.id" spellcheck="false">
+                            <td>
+                                @row.id
+                            </td>
+                            <td class="editableCell" data-col="title">
+                                @row.title
+                            </td>
+                            <td class="editableCell" data-col="date">
+                                @row.date
+                            </td>
+                            <td>
+                                <a class="hover-anchor" href="@row.source" target="_blank">
+                                    <i class="fa fa-external-link hover-icon"></i>
+                                    <span>&nbsp;Xem</span>
+                                </a>
+                            </td>
+                            <td>
+                                <a class="hover-anchor btn-editPage" data-id="@row.id" data-source="@row.source" href="@Href("~/admin/pages/edit", @row.id)">
+                                    <i class="iEdit fa fa-pencil"></i>
+                                    <span>&nbsp;Sửa</span>
+                                </a>
+                            </td>
+                                @{
+                                    var trangThai = "";
+                                    var tacVuClass = ""; var tacVuText = "";
+                                    switch ((int)(@row.status)) {
+                                        case 1:
+                                            trangThai = "Đã đăng";
+                                            tacVuClass = "fa-trash";
+                                            tacVuText = "Thùng rác";
+                                            break;
+                                        case 2:
+                                            trangThai = "Bản nháp";
+                                            tacVuClass = "fa-trash";
+                                            tacVuText = "Thùng rác";
+                                            break;
+                                        case 3:
+                                            trangThai = "Thùng rác";
+                                            tacVuClass = "fa-times";
+                                            tacVuText = "Xóa trang";
+                                            break;
+                                    }
+                                    <td>@trangThai</td>
+                                    <td>
+                                        <a class="page-action hover-anchor" data-status="@row.status" data-id="@row.id" href="#">
+                                            <i class="fa @tacVuClass"></i>
+                                            <span>@tacVuText</span>
+                                        </a>
+                                    </td>
+                                }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="row" style="border-top: 1px solid #C5CAE9; padding: 10px 20px;">
+            <span id="spn-status">@logText</span>
+        </div>
+    </main>
+}
+@section Scripts {
+    <script src="~/Scripts/siteScripts/admin-pages.js"></script>
+}

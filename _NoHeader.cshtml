@@ -1,0 +1,38 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>@Page.Title - Dakruco Hotel</title>
+    <link href="~/Content/Site.css" rel="stylesheet" type="text/css" />
+    <link href="~/favicon.ico" rel="shortcut icon" type="image/x-icon" />
+    <link rel="stylesheet" href="~/Content/font-awesome-4.7.0/css/font-awesome.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="~/Scripts/jquery-3.2.1.min.js"></script>
+    <script src="~/Scripts/jquery-ui-1.12.1.min.js"></script>
+    <link href="~/Content/themes/base/jquery-ui.min.css" rel="stylesheet" />
+    <script src="~/Scripts/myScript.js"></script>
+    @RenderSection("Scripts", required: false)
+</head>
+<body>
+    @RenderPage("~/Shared/_SiteAdminBar.cshtml")
+    <div class="container">
+        @RenderPage("~/Shared/_NoHeader.cshtml")
+        @RenderSection("main", required: false)
+        @RenderPage("~/Shared/_SiteFooter.cshtml")
+    </div>
+    <script>
+        function loading(message, milisecond) {
+            var over = '<div id="overlay">' +
+                '<div id="loading"><i class="fa fa-spinner fa-pulse fa-3x fa-fw"></i>' +
+                '<span class="sr-only">' + message + '</span></div>' +
+                '</div>';
+            $(over).appendTo('body');
+
+            setTimeout(function () {
+                $('#overlay').remove();
+            }, milisecond);
+        };
+    </script>
+    @RenderPage("~/Shared/_NoScript.cshtml");
+</body>
+</html>

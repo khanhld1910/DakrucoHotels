@@ -1,0 +1,141 @@
+﻿@* Remove this section if you are using bundling *@
+@section Scripts {
+    <script src="~/Scripts/jquery.validate.min.js"></script>
+    <script src="~/Scripts/jquery.validate.unobtrusive.min.js"></script>
+}
+
+@{
+    Layout = "~/Shared/_SiteLayout.cshtml";
+    Page.Title = "Đăng Ký";
+
+    // Initialize general page variables
+    var email = "";
+    var password = "";
+    var confirmPassword = "";
+
+    // Setup validation
+    Validation.RequireField("email", "Email không được để trống");
+    Validation.RequireField("password", "Mật khẩu không được để trống");
+    Validation.Add("confirmPassword",
+        Validator.EqualsTo("password", "Mật khẩu và xác nhận mật khẩu không trùng nhau"));
+    Validation.Add("password",
+        Validator.StringLength(
+            maxLength: Int32.MaxValue,
+            minLength: 6,
+            errorMessage: "Độ dài mật khẩu tối thiểu phải 6 ký tự"));
+
+    // If this is a POST request, validate and process data
+    if (IsPost) {
+        AntiForgery.Validate();
+        email = Request.Form["email"];
+        password = Request.Form["password"];
+        confirmPassword = Request.Form["confirmPassword"];
+
+        // Validate the user's captcha answer
+        // if (!ReCaptcha.Validate("PRIVATE_KEY")) {
+        //     ModelState.AddError("recaptcha", "Captcha response was not correct");
+        // }
+
+        // If all information is valid, create a new account
+        if (Validation.IsValid()) {
+            // Insert a new user into the database
+            var db = Database.Open("StarterSite");
+
+            // Check if user already exists
+            var user = db.QuerySingle("SELECT Email FROM UserProfile WHERE LOWER(Email) = LOWER(@0)", email);
+            if (user == null) {
+                // Insert email into the profile table
+                db.Execute("INSERT INTO UserProfile (Email) VALUES (@0)", email);
+
+                // Create and associate a new entry in the membership database.
+                // If successful, continue processing the request
+                try {
+                    bool requireEmailConfirmation = !WebMail.SmtpServer.IsEmpty();
+                    var token = WebSecurity.CreateAccount(email, password, requireEmailConfirmation);
+                    if (requireEmailConfirmation) {
+                        var hostUrl = Request.Url.GetComponents(UriComponents.SchemeAndServer, UriFormat.Unescaped);
+                        var confirmationUrl = hostUrl + VirtualPathUtility.ToAbsolute("~/Account/Confirm?confirmationCode=" + HttpUtility.UrlEncode(token));
+
+                        WebMail.Send(
+                            to: email,
+                            subject: "Please confirm your account",
+                            body: "Your confirmation code is: " + token + ". Visit <a href=\"" + confirmationUrl + "\">" + confirmationUrl + "</a> to activate your account."
+                        );
+                    }
+
+                    if (requireEmailConfirmation) {
+                        // Thank the user for registering and let them know an email is on its way
+                        Response.Redirect("~/Account/Thanks");
+                    } else {
+                        // Navigate back to the homepage and exit
+                        WebSecurity.Login(email, password);
+
+                        Response.Redirect("~/");
+                    }
+                } catch (System.Web.Security.MembershipCreateUserException e) {
+                    ModelState.AddFormError(e.Message);
+                }
+            } else {
+                // User already exists
+                ModelState.AddFormError("Email đã tồn tại.");
+            }
+        }
+    }
+}
+@section main {
+    <main style="padding: 30px;">
+
+        <hgroup class="title">
+            <h1>@Page.Title.</h1>
+            <h2>Tạo tài khoản mới</h2>
+        </hgroup>
+
+        <form method="post">
+            @AntiForgery.GetHtml()
+            @* If at least one validation error exists, notify the user *@
+            @Html.ValidationSummary("Tạo tài khoản không thành công. Vui lòng sửa lỗi và tạo lại", excludeFieldErrors: true, htmlAttributes: null)
+
+            <fieldset>
+                <legend>Đăng ký</legend>
+                <ol>
+                    <li class="email">
+                        <label for="email" @if (!ModelState.IsValidField("email")) { <text> class="error-label" </text> }>Địa chỉ email</label>
+                        <input type="text" id="email" name="email" value="@email" @Validation.For("email") />
+                        @* Write any email validation errors to the page *@
+                        @Html.ValidationMessage("email")
+                    </li>
+                    <li class="password">
+                        <label for="password" @if (!ModelState.IsValidField("password")) { <text> class="error-label" </text> }>Mật khẩu</label>
+                        <input type="password" id="password" name="password" @Validation.For("password") />
+                        @* Write any password validation errors to the page *@
+                        @Html.ValidationMessage("password")
+                    </li>
+                    <li class="confirm-password">
+                        <label for="confirmPassword" @if (!ModelState.IsValidField("confirmPassword")) { <text> class="error-label" </text> }>Nhập lại mật khẩu</label>
+                        <input type="password" id="confirmPassword" name="confirmPassword" @Validation.For("confirmPassword") />
+                        @* Write any password validation errors to the page *@
+                        @Html.ValidationMessage("confirmPassword")
+                    </li>
+                    <li class="recaptcha">
+                        <div class="message-info">
+                            <p>
+                                To enable CAPTCHA verification, <a href="https://go.microsoft.com/fwlink/?LinkId=204140">
+                                    install the
+                                    ASP.NET Web Helpers Library
+                                </a> and uncomment ReCaptcha.GetHtml and replace 'PUBLIC_KEY'
+                                with your public key. At the top of this page, uncomment ReCaptcha. Validate and
+                                replace 'PRIVATE_KEY' with your private key.
+                                Register for reCAPTCHA keys at <a href="http://recaptcha.net">reCAPTCHA.net</a>.
+                            </p>
+                        </div>
+                        @*
+                        @ReCaptcha.GetHtml("PUBLIC_KEY", theme: "white")
+                        @Html.ValidationMessage("recaptcha")
+                        *@
+                    </li>
+                </ol>
+                <input type="submit" value="Register" />
+            </fieldset>
+        </form>
+    </main>
+}

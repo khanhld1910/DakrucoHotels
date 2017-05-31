@@ -1,0 +1,112 @@
+﻿@* Remove this section if you are using bundling *@
+@section Scripts {
+    <script src="~/Scripts/jquery.validate.min.js"></script>
+    <script src="~/Scripts/jquery.validate.unobtrusive.min.js"></script>
+}
+
+@{
+    Layout = "~/_NoHeader.cshtml";
+    Page.Title = "Đăng nhập";
+
+    // Initialize general page variables
+    var email = "";
+    var password = "";
+    var rememberMe = false;
+
+    var returnUrl = Request.QueryString["ReturnUrl"];
+    if (returnUrl.IsEmpty()) {
+        // Some external login providers always require a return URL value
+        returnUrl = Href("~/");
+    }
+
+    // Setup validation
+    Validation.RequireField("email", "Email không được để trống");
+    Validation.RequireField("password", "Mật khẩu không được để trống");
+    Validation.Add("password",
+        Validator.StringLength(
+            maxLength: Int32.MaxValue,
+            minLength: 6,
+            errorMessage: "Chiều dài mật khẩu ít nhất 6 ký tự"));
+
+    // If this is a POST request, validate and process data
+    if (IsPost) {
+        AntiForgery.Validate();
+        // is this an external login request?
+        string provider = Request.Form["provider"];
+        if (!provider.IsEmpty()) {
+            OAuthWebSecurity.RequestAuthentication(provider, Href("~/Account/RegisterService", new { returnUrl }));
+            return;
+        } else if (Validation.IsValid()) {
+            email = Request.Form["email"];
+            password = Request.Form["password"];
+            rememberMe = Request.Form["rememberMe"].AsBool();
+
+            if (WebSecurity.UserExists(email) && WebSecurity.GetPasswordFailuresSinceLastSuccess(email) > 4 && WebSecurity.GetLastPasswordFailureDate(email).AddSeconds(60) > DateTime.UtcNow) {
+                Response.Redirect("~/Account/AccountLockedOut");
+                return;
+            }
+
+            // Attempt to log in using provided credentials
+            if (WebSecurity.Login(email, password, rememberMe)) {
+                Context.RedirectLocal(returnUrl);
+                return;
+            } else {
+                ModelState.AddFormError("Email hoặc mật khẩu không đúng.");
+            }
+        }
+    }
+}
+
+<hgroup class="title">
+    <h1>@Page.Title.</h1>
+</hgroup>
+@section main {
+    <main style="padding: 30px 20vw; margin: 0 auto; width: 80vw;">
+        <section id="loginForm">
+            <h2 style="padding: 10px;">Đăng nhập quyền quản trị</h2>
+            <form method="post">                
+                @AntiForgery.GetHtml()
+                @* If one or more validation errors exist, show an error *@
+                @Html.ValidationSummary("Đăng nhập không thành công. Vui lòng thử lại", excludeFieldErrors: true, htmlAttributes: null)
+
+                <fieldset>
+                    <ol>
+                        <li class="input-field">
+                            @if (WebSecurity.IsAuthenticated) {
+                                <p>
+                                    Bạn đã đăng nhập với email @WebSecurity.CurrentUserName.
+                                    <a href="@Href("~/Account/Logout")">Đăng xuất</a>
+                                </p>
+                            }
+                        </li>
+                        <li class="input-field email">
+                            <label for="email" @if (!ModelState.IsValidField("email")) { <text> class="error-label" </text>     }>Địa chỉ email</label>
+                            <input type="text" id="email" name="email" value="@email" @Validation.For("email") />
+                            @* Write any user name validation errors to the page *@
+                            @Html.ValidationMessage("email")
+                        </li>
+                        <li class="input-field password">
+                            <label for="password" @if (!ModelState.IsValidField("password")) { <text> class="error-label" </text>     }>Mật khẩu</label>
+                            <input type="password" id="password" name="password" @Validation.For("password") />
+                            @* Write any password validation errors to the page *@
+                            @Html.ValidationMessage("password")
+                        </li>
+                        <li class="input-field">
+                            <input type="submit" value="Đăng nhập" />
+                        </li>
+                        <li class="input-field">
+                            <input type="button" value="Hủy bỏ" onclick="history.go(-1);" />
+                        </li>
+                        <li class="input-field remember-me">
+                            <input class="checkbox" type="checkbox" id="rememberMe" name="rememberMe" value="true" checked="@rememberMe" />
+                            <label class="checkbox" for="rememberMe">Tự động đăng nhập</label>
+                        </li>
+                        <li class="input-field">
+                            <a href="~/Account/ForgotPassword">Quên mật khẩu?</a>
+                        </li>
+                    </ol>
+                </fieldset>
+            </form>
+        </section>       
+    </main>
+}

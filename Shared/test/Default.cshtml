@@ -1,0 +1,58 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>@Page.Title - Dakruco Hotel</title>
+    <link href="~/Content/Site.css" rel="stylesheet" type="text/css" />
+    <link href="~/favicon.ico" rel="shortcut icon" type="image/x-icon" />
+    <link rel="stylesheet" href="~/Content/font-awesome-4.7.0/css/font-awesome.min.css">
+    <script src="~/Scripts/jquery-3.2.1.min.js"></script>
+    <script src="~/Scripts/jquery-ui-1.12.1.min.js"></script>
+    <script src="~/Scripts/myScript.js"></script>
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/smoothness/jquery-ui.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+</head>
+@{ 
+    var message = "chua gui";
+
+    if (IsPost) {
+        try {
+            // Send email
+            WebMail.Send(to: "khanhldpk00450@fpt.edu.vn",
+                subject: "Xác nhận yêu cầu đặt phòng - " + "Khanh",
+                body: "đang test thôi"
+            );
+            message = "Da gui";
+        } catch (Exception ex) {
+            message = ex.Message;
+        };
+    }
+}
+
+<body>
+    <div class="container">
+        <main style="width: 100%; height: 800px;">
+            <input type="button" id="button" value="Click" />
+            <div id="result" class="py-30">
+                @message
+            </div>
+        </main>
+    </div>
+    <script>
+        $(function () {
+            $("#button").click(function () {
+                $.ajax({
+                    type: "post",
+                    url: "/shared/test",
+                    data: {},
+                    datatype: "html",
+                    success: function (data) {
+                        $('body').html(data);
+                    }
+                });
+
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+﻿@{
+    Page.isAuth = WebSecurity.IsAuthenticated;
+    if (WebSecurity.IsAuthenticated) {
+        Page.userName = WebSecurity.CurrentUserName;
+    };
+}

@@ -1,0 +1,124 @@
+﻿@{
+    Layout = "~/_NoHeaderLayout.cshtml";
+    PageData["Title"] = "Đa phương tiện";
+
+    var db = Database.Open("SiteDB");
+
+
+    if (IsPost) {
+        //----- sua trang thai
+        switch (Request.Form["request"]) {
+            case "add":
+                var delItemIds = Request.Form["delItemIds[]"];
+                var delCommand = "DELETE FROM dsdatphong WHERE id in (" + delItemIds + ")";
+                var status = db.Execute(delCommand);
+                //Response.AddHeader("status", status.ToString());
+                break;
+            case "edit":
+                var editCommand = "UPDATE dsdatphong SET ten = @0, dienthoai = @1, ngayden = @2, ngaydi = @3, dsphong = @4, gia = @5, nguoilon = @6, treem = @7 WHERE id = @8";
+                db.Execute(editCommand, Request.Form["name"], Request.Form["phone"], Request.Form["arrDate"], Request.Form["depDate"], Request.Form["room"], Request.Form["cost"], Request.Form["adult"], Request.Form["child"], Request.Form["id"]);
+                break;
+            case "delete":
+                var daxuly = (Request.Form["daxuly"].AsBool()) ? 1 : 0;
+                var updateCommand = "UPDATE dsdatphong SET daxuly = @0 WHERE id = @1";
+                db.Execute(updateCommand, daxuly, Request.Form["id"]);
+                break;
+            case "load-filter":
+                break;
+            default:
+                break;
+        };
+    };
+
+    // loadpage - search - nextpage
+    var keyword = Request.Form["keyword"].IsEmpty() ? "" : Request.Form["keyword"];
+    var pageIndex = Request.Form["pageIndex"].IsEmpty() ? 1 : Request.Form["pageIndex"].AsInt();
+    var queryCommand = "SELECT * FROM MEDIA WHERE(name like @0) order by id OFFSET @1 ROWS FETCH NEXT 20 ROWS ONLY;";
+    var count = db.QueryValue("SELECT COUNT (id) FROM media WHERE(name like @0);", "%" + keyword + "%");
+    var logText = keyword.IsEmpty() ? " >> Tìm được " + count + " kết quả" : " >> Tìm được " + count + " kết quả với từ khóa '" + keyword + "'";
+    var rows = db.Query(queryCommand, "%" + keyword + "%", (pageIndex - 1) * 20);
+}
+@section main {
+    <main id="adminbox">
+        <div class="admin-title">
+            <h3>@Page.Title</h3>
+        </div>
+        <div class="admin-toolbar row flex-start">
+            <div class="col s1 page-nav">
+                <a class="nav-item admin-tool-icon" href="#">
+                    <i id="list-view" class="fa fa-list admin-icon"></i>
+                </a>
+                <a class="nav-item admin-tool-icon" href="#">
+                    <i id="thumbnail-view" class="fa fa-th admin-icon right-border"></i>
+                </a>
+            </div>
+            <div class="col s1 page-nav">
+                <div id="font-format" class="page-edit-icon col px-10">
+                    <span>Mọi loại</span>
+                    <i class="fa fa-caret-down"></i>
+                    <ul class="not-display format-ul">
+                        <li>Mọi loại</li>
+                        <li>Hình ảnh</li>
+                        <li>Video</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col s1 page-nav">
+                <div id="font-format" class="page-edit-icon col px-10">
+                    <span>Mọi lúc</span>
+                    <i class="fa fa-caret-down"></i>
+                    <ul class="not-display format-ul">
+                        <li>Mọi lúc</li>
+                        <li>Tháng 5 2017</li>
+                        <li>Tháng 4 2017</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col s2 page-nav">
+                <a class="nav-item admin-tool-icon" href="#">
+                    <span id="btn-filter" class="admin-btn">Lọc</span>
+                </a>
+                <a class="nav-item admin-tool-icon" href="#">
+                    <span id="btn-add-photo" class="admin-btn">Thêm</span>
+                </a>
+            </div>
+            <div class="col s2 page-nav center-align">
+                <a class="nav-item admin-tool-icon" href="#">
+                    <i id="list-view" class="fa fa-caret-left admin-icon"></i>
+                </a>
+                <input type="number" value="1" name="pageIndex" id="pageIndex" />
+                <span class="nav-item admin-tool-icon">trên 2</span>
+                <a class="nav-item admin-tool-icon" href="#">
+                    <i id="list-view" class="fa fa-caret-right admin-icon"></i>
+                </a>
+            </div>
+            <div class="col s5 page-nav center-align">                
+                <input id="ipt-searchBookinglst" type="text" placeholder="tìm kiếm" value="@keyword" />
+            </div>
+        </div>
+        <div id="media-file-list">
+            <ul>
+                @foreach (var row in rows) {
+                    if ( @row.type.Trim() == "image") {
+                        <li>
+                            <div class="img-item-box">
+                                <span>
+                                    <i class="fa fa-check-square fa-2x" aria-hidden="true"></i>
+                                </span>
+                                <img src="@row.source.Trim()" alt="@row.name.Trim()" />
+                            </div>
+                        </li>
+                    } else {
+
+                    }
+                }                
+            </ul>
+        </div>
+        <div class="row" style="border-top: 1px solid #C5CAE9; padding: 10px 20px;">
+            <span id="spn-status">@logText</span>
+        </div>
+    </main>
+}
+@section Scripts {
+    <script src="~/Scripts/siteScripts/admin-pages.js"></script>
+}

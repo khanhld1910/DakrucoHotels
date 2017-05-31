@@ -1,0 +1,63 @@
+﻿@{
+    Layout = "~/_NoHeaderLayout.cshtml";
+    Page.Title = "Hình ảnh";
+}
+@section main {
+    <main>
+        <div class="row title-bar">
+            <h2>
+                Hình ảnh
+            </h2>
+        </div>
+        <section style="padding: 10px 10px 30px;">
+            <div class="row preview-content">
+                <div class="col s6 p-right preview-img p-bottom">
+                    <img class="album-img hover-img" src="~/Images/album/album-img00.jpg"/>
+                </div>
+                <div class="col s6 m-bottom preview-img">
+                    <img class="album-img hover-img" src="~/Images/album/album-img01.jpg"/>           
+                </div>
+            </div>
+            <div class="row preview-content">
+                <div class="col s8">
+                    <div class="row p-bottom">
+                        <div class="col s6 preview-img p-right">
+                            <img class="album-img hover-img" src="~/Images/album/album-img02.jpg"/>
+                        </div>
+                        <div class="col s6 preview-img p-right">
+                            <img class="album-img hover-img" src="~/Images/album/album-img03.jpg"/>
+                        </div>
+                    </div>
+                    <div class="row p-bottom">
+                        <div class="col s6 preview-img p-right">
+                            <img class="album-img hover-img" src="~/Images/album/album-img04.jpg"/>
+                        </div>
+                        <div class="col s6 preview-img p-right">
+                            <img class="album-img hover-img" src="~/Images/album/album-img05.jpg"/>
+                        </div>
+                    </div>
+                </div>
+                <div class="col s4 preview-img p-bottom">
+                    <img src="~/Images/food/food05.jpg"/>
+                </div>
+            </div>
+            <div class="row preview-content">
+                <div class="col s8 p-right p-bottom preview-img ">
+                    <img class="album-img hover-img" src="~/Images/album/album-img07.jpg"/>
+                </div>
+                <div class="col s4">
+                    <div class="row s12 p-bottom preview-img">
+                        <img class="album-img hover-img" src="~/Images/album/album-img08.jpg"/>
+                    </div>
+                    <div class="row s12 p-bottom preview-img">
+                        <img class="album-img hover-img" src="~/Images/album/album-img09.jpg"/>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+}
+
+@section Scripts {    
+    <script src="~/Scripts/siteScripts/album.js"></script>
+}

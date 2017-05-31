@@ -1,0 +1,211 @@
+﻿@{
+    Layout = "~/_NoHeader.cshtml";
+    PageData["Title"] = "Danh sách đặt phòng";
+
+    var db = Database.Open("SiteDB");
+    var eventFilter = false;
+
+
+    if (IsPost) {
+        //----- sua trang thai
+        switch (Request.Form["request"]) {
+            case "upcoming-event":
+                eventFilter = true;
+                break;
+            case "today-event":
+                eventFilter = true;
+                break;
+            case "delete":
+                var delItemIds = Request.Form["delItemIds[]"];
+                var delCommand = "DELETE FROM dsdatphong WHERE id in (" + delItemIds + ")";
+                var status = db.Execute(delCommand);
+                //Response.AddHeader("status", status.ToString());
+                break;
+            case "edit":
+                var editCommand = "UPDATE dsdatphong SET ten = @0, dienthoai = @1, email = @9, ngayden = @2, ngaydi = @3, dsphong = @4, gia = @5, nguoilon = @6, treem = @7 WHERE id = @8";
+                db.Execute(editCommand, Request.Form["name"], Request.Form["phone"], Request.Form["arrDate"], Request.Form["depDate"], Request.Form["room"], Request.Form["cost"], Request.Form["adult"], Request.Form["child"], Request.Form["id"], Request.Form["email"]);
+                break;
+            case "update-status":
+                var tinhtrang = Request.Form["status"].AsInt();
+                var updateCommand = "UPDATE dsdatphong SET tinhtrang = @0 WHERE id = @1";
+                db.Execute(updateCommand, tinhtrang, Request.Form["id"]);
+                break;
+            default:
+                break;
+        };
+    };
+
+    // loadpage - search - nextpage - events filter
+    var queryCommand = "";
+    var count = 0;
+    var keyword = Request.Form["keyWord"].IsEmpty() ? "" : Request.Form["keyWord"];
+    var pageIndex = Request.Form["pageIndex"].IsEmpty() ? 1 : Request.Form["pageIndex"].AsInt();
+
+    if (eventFilter) {
+        queryCommand = "SELECT * FROM dsdatphong WHERE(ngayden like @0 or ngaydi like @0) ORDER BY tinhtrang asc, id desc OFFSET @1 ROWS FETCH NEXT 10 ROWS ONLY;";
+        count = db.QueryValue("SELECT COUNT (id) FROM dsdatphong WHERE (ngayden like @0 or ngaydi like @0);", "%" + keyword + "%");
+    } else {
+        queryCommand = "SELECT * FROM dsdatphong WHERE(ten like @0 or dienthoai like @0 or email like @0 or ngayden like @0 or ngaydi like @0) ORDER BY tinhtrang asc, id desc OFFSET @1 ROWS FETCH NEXT 10 ROWS ONLY;";
+        count = db.QueryValue("SELECT COUNT (id) FROM dsdatphong WHERE (ten like @0 or dienthoai like @0 or email like @0 or ngayden like @0 or ngaydi like @0);", "%" + keyword + "%");
+    };
+    var logText = keyword.IsEmpty() ? " >> Tìm được " + count + " kết quả" : " >> Tìm được " + count + " kết quả với từ khóa '" + keyword + "'";
+    var rows = db.Query(queryCommand, "%" + keyword + "%", (pageIndex - 1) * 10);
+}
+@section main {
+    <main id="adminbox">
+        <div class="admin-title">
+            <h3>@Page.Title</h3>
+        </div>
+        <div class="admin-toolbar row flex-end">
+            <div class="col s5 left-align">
+                <a class="nav-item right-border admin-tool-icon" href="#">
+                    <i id="btn-today" class="fa fa-sign-in admin-icon"><span>&nbsp;Hôm nay</span></i>
+                </a>
+                <a class="nav-item admin-tool-icon" href="#">
+                    <i id="btn-tomorrow" class="fa fa-sign-in admin-icon"><span>&nbsp;Ngày mai</span></i>
+                </a>
+            </div>
+            <div class="col s2 page-nav center-align">
+                <span class="admin-tool-icon">
+                    <i id="btn-leftBkPage" class="btn-BkPage fa fa-caret-left admin-icon"></i>
+                </span>
+                <span class="admin-tool-icon admin-icon">
+                    <span id="spn-pageIndex" data-count="@count">@pageIndex</span>
+                </span>
+                <span class="admin-tool-icon">
+                    <i id="btn-rightBkPage" class="btn-BkPage fa fa-caret-right admin-icon"></i>
+                </span>
+            </div>
+            <div class="col s3 right-align">
+                <a class="nav-item right-border admin-tool-icon" href="#">
+                    <i id="btn-delBookinglst" class="fa fa-trash admin-icon"><span>&nbsp;Xóa</span></i>
+                </a>
+                <a class="nav-item admin-tool-icon" href="#">
+                    <i id="isearchReset" class="fa fa-eraser admin-icon"><span>&nbsp;Reset</span></i>
+                </a>
+            </div>
+            <div class="col s2" style="position: relative;">
+                <input id="ipt-searchBookinglst" type="text" placeholder="tìm kiếm" value="@keyword" />
+                <i id="btn-searchBookinglst" class="fa fa-search admin-tool-icon admin-icon"></i>
+            </div>
+        </div>
+        <div id="dsDatPhong">
+            <table class="ldk-table" style="width: 100%;">
+                <thead>
+                    <tr>
+                        <th style="border-left: 0px;">
+                            Id
+                        </th>
+                        <th>
+                            Họ Tên
+                        </th>
+                        <th>
+                            eMail
+                        </th>
+                        <th>
+                            Điện thoại
+                        </th>
+                        <th>
+                            Ngày đến
+                        </th>
+                        <th>
+                            Ngày đi
+                        </th>
+                        <th>
+                            Phòng đặt
+                        </th>
+                        <th>
+                            Giá
+                        </th>
+                        <th>
+                            Người lớn
+                        </th>
+                        <th>
+                            Trẻ em
+                        </th>
+                        <th>
+                            T/Trạng
+                        </th>
+                        <th>
+                            Sửa
+                        </th>
+                        <th>
+                            Xóa
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in rows) {
+                    <tr data-id="@row.id" spellcheck="false">
+                        <td class="right-align" style="border-left: 0px;">
+                            @row.id
+                        </td>
+                        <td class="editableCell" data-col="name">
+                            @row.ten
+                        </td>
+                        <td class="editableCell" data-col="email">
+                            @row.email
+                        </td>
+                        <td class="right-align editableCell" data-col="phone">
+                            @row.dienthoai
+                        </td>
+                        <td class="right-align editableCell" data-col="arrDate">
+                            @row.ngayden
+                        </td>
+                        <td class="right-align editableCell" data-col="depDate">
+                            @row.ngaydi
+                        </td>
+                        <td class="editableCell" data-col="room">
+                            @row.dsphong
+                        </td>
+                        <td class="right-align editableCell" data-col="cost">
+                            @row.gia
+                        </td>
+                        <td class="right-align editableCell" data-col="adult">
+                            @row.nguoilon
+                        </td>
+                        <td class="right-align editableCell" data-col="child">
+                            @row.treem
+                        </td>
+                        <td class="center-align">
+                            @{
+                                var trangThaiTXT = "";
+                                switch ((int)@row.tinhtrang) {
+                                    case 0:
+                                        trangThaiTXT = "fa-exclamation";
+                                        break;
+                                    case 1:
+                                        trangThaiTXT = "fa-ellipsis-h";
+                                        break;
+                                    case 2:
+                                        trangThaiTXT = "fa-check";
+                                        break;
+                                }                                
+                                <i class="iBookingsts fa ldk-color @trangThaiTXT" data-status="@row.tinhtrang" data-id="@row.id" aria-hidden="true"></i>
+                            }
+                        </td>
+                        <td class="center-align">
+                            <i class="iEdit fa fa-pencil" data-isEditing="0" style="color: #C5CAE9; cursor: pointer;"></i>
+                        </td>
+                        <td class="center-align">
+                            <input name="iBkselect" data-id="@row.id" type="checkbox" style="width: 15px; padding: 2px; cursor: pointer;" />
+                        </td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="row" style="border-top: 1px solid #C5CAE9; padding: 10px 20px;">
+            <span id="spn-status">@logText</span>
+        </div>
+        <div id="dialog-confirm" class="not-display" title="Cảnh báo">
+            <p>
+                <span class="ui-icon ui-icon-alert" style="float:left; margin:12px 12px 20px 0;"></span>
+                Những yêu cầu đặt phòng được chọn sẽ bị xóa vĩnh viễn và không khôi phục lại được. Bạn có chắc chắn muốn xóa?
+            </p>
+        </div>
+    </main>
+}
+@section Scripts {
+    <script src="~/Scripts/siteScripts/admin-dsdatphong.js"></script>
+}

@@ -1,0 +1,72 @@
+﻿@{
+    var maPhong = Page.maphong;
+    var db = Database.Open("SiteDB");
+    var phong = db.QuerySingle("Select * from Phong where MaPhong = " + maPhong);
+}
+<div class="row row-item space-around">
+    <div class="col s3 row-image-box">
+        @{
+            var anh = db.QuerySingle("select LinkAnh from Phong_img where maphong = @0 order by MaAnh desc OFFSET 0 ROWS FETCH NEXT 1 ROWS ONLY; ", maPhong);
+            <img src="../@anh.LinkAnh" />
+        }
+    </div>
+    <div class="col s5">
+        <div class="row row-name">
+            <p class="col s12">
+                @phong.TenPhong
+            </p>
+        </div>
+        <div class="row">
+            <ul class="col s12 row-details">
+                <li>
+                    Số lượng phòng: @phong.SoLuong phòng
+                </li>
+                <li>
+                    Cảnh quan: @phong.CanhQuan
+                </li>
+                <li>
+                    Trang trí: @phong.TrangTri
+                </li>
+                <li>
+                    Phòng ngủ: @phong.PhongNgu
+                </li>
+                <li>
+                    Phòng Tắm: @phong.PhongTam
+                </li>
+                @if (!String.IsNullOrWhiteSpace(@phong.MoTa)) {<li>@phong.MoTa</li>
+                }   
+                <li>
+                    Diện tích: @phong.DienTich
+                </li>
+            </ul>
+        </div>
+        <div class="row">
+            <ul class="col s12 row-icons">
+                @{
+                    var stringquery = @"select tienich.tentienich, tienich.linktienich " +
+        @"from tienich, phong_tienich " +
+        @"where tienich.matienich = phong_tienich.matienich " +
+        @"and phong_tienich.maphong = " + maPhong;
+                    var featurelist = db.Query(stringquery);
+                }
+                @foreach (var tienich in featurelist) {
+                    <li class="row-icon tooltip fe-icon" style="background: url(@tienich.LinkTienIch) no-repeat center;
+    background-size: cover;">
+                        <span class="tooltiptext">
+                            @tienich.TenTienIch
+                        </span>
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+    <div class="col s2 row-cost">
+        <span class="span-from">
+            Giá 1 đêm
+        </span>
+        <span class="span-value room-cost">
+            $@phong.GiaPhong
+        </span>
+        <a class="link room-add" href="#" data-roomname="@phong.TenPhong" data-roomcost="@phong.GiaPhong">Chọn phòng</a>
+    </div>
+</div>

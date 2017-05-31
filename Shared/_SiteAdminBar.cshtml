@@ -1,0 +1,64 @@
+﻿@{ 
+    var isAdminLogged = Roles.IsUserInRole(WebSecurity.CurrentUserName, "Admin");
+    var addClass = isAdminLogged ? "logged-in" : "";
+}
+<div id="admin-bar" class="z-depth-1 @addClass">
+    <div class="row space-end">
+        @if (isAdminLogged) {
+            <div class="col s8">
+                <nav>
+                    <a class="nav-item right-border" href="~/">
+                        <i class="fa fa-home admin-icon" aria-hidden="true">
+                            <span>Dakruco</span>
+                        </i>
+                    </a>
+                    <a class="nav-item right-border" href="~/admin/">
+                        <i class="fa fa-home admin-icon" aria-hidden="true">
+                            <span>Bảng Tin</span>
+                        </i>
+                    </a>
+                    <a class="nav-item right-border" href="~/Admin/QLPhong">
+                        <i class="fa fa-tasks admin-icon">
+                            <span>Phòng</span>
+                        </i>
+                    </a>
+                    <a class="nav-item right-border" href="~/Admin/DSDatPhong">
+                        <i class="fa fa-list-ul admin-icon">
+                            <span>Booking</span>
+                        </i>
+                    </a>
+                    <a class="nav-item right-border" href="~/Admin/Pages">
+                        <i class="fa fa-file-text admin-icon">
+                            <span>Trang</span>
+                        </i>
+                    </a>
+                </nav>
+            </div>
+        } else {
+            <div class="col s8"></div>
+        }
+        <div class="col s4 login-box right-align">
+            @{
+                //<span>Trạng thái: @WebSecurity.IsAuthenticated </span>
+                if (!Page.isAuth) {
+                    <a href="~/Account/Login">
+                        <i class="fa fa-user-circle-o admin-icon" aria-hidden="true">
+                            <span>Đăng nhập</span>
+                        </i>
+                    </a>
+                } else {
+                    <i class="fa fa-user-circle-o admin-icon" aria-hidden="true">
+                        <span>@Page.userName</span>
+                    </i>
+                    <a class="nav-item left-border" href="~/Account/Logout">
+                        <i class="fa fa-sign-out admin-icon" aria-hidden="true">
+                            <span>Đăng xuất</span>
+                        </i>
+                    </a>
+                }
+            }
+
+        </div>
+    </div>
+
+</div>

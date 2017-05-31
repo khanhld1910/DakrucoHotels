@@ -1,0 +1,10 @@
+﻿@{PageData["Title"] = "Create new folders using Razor";}@section main {<main><div class="row title-bar"><h2>Create new folders using Razor</h2></div><section style="padding: 20px;">var root = Server.MapPath("~/App_Data");
+    var foldername =  Request["folderName"];
+    var path = Path.GetFullName(Path.Combine(root, foldername));
+    if (!path.StartsWith(root)) {
+        // The user path must have contained relative path chars. disallow this.
+        Response.Status = 401;
+    }
+    if(!Directory.Exists(path)){
+        Directory.CreateDirectory(path);
+    }</section></main>}

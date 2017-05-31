@@ -1,0 +1,155 @@
+﻿@{
+    Layout = "~/_NoHeaderLayout.cshtml";
+    Page.Title = "Rooms";
+    var db = Database.Open("SiteDB");
+    var message = "";
+
+    if (IsPost) {
+        var name = Request.Form["name"].Trim();
+        var tel = Request.Form["tel"].Trim();
+        var email = Request.Form["email"].Trim();
+        var adult = Request.Form["adult"].Trim();
+        var child = Request.Form["child"].Trim();
+        var arr = Request.Form["ngayden"].Trim();
+        var dep = Request.Form["ngaydi"].Trim();
+        var roomlist = Request.Form["dsPhong"].Trim();
+        var cost = Request.Form["cost"].Trim();
+
+        //db.Execute("insert into test(data) values ('"+ arr + "');");
+
+        db.Execute("insert into dsdatphong(ten, dienthoai, ngayden, ngaydi, dsphong, gia, nguoilon, treem, tinhtrang, email) values(@0, @1, @2, @3, @4, @5, @6, @7, @8, @9)",name,tel,arr,dep,roomlist,cost,adult,child, 0, email);
+
+        try {
+            // Send email
+            WebMail.Send(to: email,
+                subject: "Xác nhận yêu cầu đặt phòng",
+                isBodyHtml: true,
+                body: "xin chào " + name + "<br />"
+                + "Quý khách đã gửi yêu cầu đặt phòng trên Dakrucohotels.com với thông tin như sau:<br />"
+                + "Họ tên: " + name + "<br />"
+                + "Phone: " + tel + "<br />"
+                + "Ngày đến: " + arr + "<br />"
+                + "Ngày đi: " + dep + "<br />"
+                + "Chúng tôi đã nhận được yêu cầu của quý khách và sẽ liên lạc lại trong thời gian sớm nhất. Xin cảm ơn. <br />"
+                + "Mọi thắc mắc xin liên hệ: Khách sạn Dakruco - 30 Nguyễn Chí Thanh, TP. Buôn Ma Thuột.<br />"
+                + "Điện thoại: (84-500)3970777 | (84-500)3970888 <br />"
+                + "eMail: info@dakrucohotels.com | sales@dakrucohotels.com"
+
+            );
+            message = "Yêu cầu của quý khách đã được nhận. Một email xác nhận đã được gửi vào địa chỉ email đăng ký. ";
+        } catch (Exception ex) {
+            message = ex.Message;
+        };
+
+    }
+}
+@section main {
+    <div id="form-booking" class="not-display z-depth-3">
+        <h2>
+            Thông tin khách hàng
+        </h2>
+        <div id="bf-post">
+            <div class="input-field">
+                <label for="iName">
+                    Họ tên
+                </label>
+                <input type="text" id="iName" required placeholder="Họ tên" />
+            </div>
+            <div class="input-field">
+                <label for="iTel">
+                    Số điện thoại
+                </label>
+                <input type="tel" id="iTel" required placeholder="Số điện thoại" />
+            </div>
+            <div class="input-field">
+                <label for="eMail">
+                    Email
+                </label>
+                <input type="email" id="eMail" required placeholder="eMail" />
+            </div>
+            <div class="input-field">
+                <button id="btn-smbr">Gửi yêu cầu</button>
+            </div>
+            <div id="respond-field" class="input-field not-display">
+                <span class="err"></span>
+            </div>
+        </div>
+    </div>
+    <main>
+        <div class="row title-bar">
+            <h2>
+                Phòng nghỉ
+            </h2>
+        </div>
+        <div id="book-room" class="row space-around">
+            <div class="col s3 input-field">
+                <span class="label-span">
+                    Ngày đến
+                </span>
+                <div id="ngayden" class="input-div">
+
+                </div>
+            </div>
+            <div class="col s3 input-field">
+                <span class="label-span">
+                    Ngày đi
+                </span>
+                <div id="ngaydi" class="input-div">
+
+                </div>
+            </div>
+            <div class="col s2 input-field">
+                <span class="label-span">
+                    Người lớn
+                </span>
+                <div class="ticks">
+                    <i class="fa fa-caret-up tick-up" id="ng-up" aria-hidden="true"></i>
+                    <i class="fa fa-caret-down tick-down" id="ng-down" aria-hidden="true"></i>
+                </div>
+                <div id="nguoilon" class="select-div">
+                    1
+                </div>
+            </div>
+            <div class="col s2 input-field">
+                <span class="label-span">
+                    Trẻ em
+                </span>
+                <div class="ticks">
+                    <i class="fa fa-caret-up tick-up" id="child-up" aria-hidden="true"></i>
+                    <i class="fa fa-caret-down tick-down" id="child-down" aria-hidden="true"></i>
+                </div>
+                <div id="treem" class="select-div">
+                    0
+                </div>
+            </div>
+            <div class="col s2 input-field">
+                <button class="btn full-width" id="booking-submit">Tìm kiếm</button>
+            </div>
+        </div>
+        <div id="book-result" class="not-display">
+            <div id="room-request">
+                <h3 class="row"></h3>
+                <ul id="booking-details"></ul>
+                <p id="total-cost">
+                </p>
+                <p id="send-request" class="not-display">
+                    <br />
+                    Chúng tôi sẽ gọi điện thoại xác nhận lại yêu cầu của quý khách.
+                    <a href="#" style="padding: 10px 0px; margin-top: 30px; display: block;">
+                        >> Gửi yêu cầu đặt phòng (trả sau)
+                    </a>
+                </p>
+            </div>
+        </div>
+        <section class="pb-30">
+            @foreach (var row in db.Query("select MaPhong from Phong")) {
+                @RenderPage("~/Shared/_RoomItem.cshtml", new { maphong = row.MaPhong });
+                //<p>@row.MaPhong</p>
+            }
+        </section>
+    </main>
+}
+
+@section Scripts {
+    <script src="~/Scripts/siteScripts/rooms.js"></script>    
+}

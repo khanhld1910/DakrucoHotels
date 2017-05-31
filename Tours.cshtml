@@ -1,0 +1,19 @@
+﻿@{
+    Layout = "~/_NoHeaderLayout.cshtml";
+    Page.Title = "Tours";
+}
+@section main {
+    <main class="dark-primary-color">
+        <div class="row title-bar">
+            <h2>
+                Tours
+            </h2>
+        </div>
+        <section class="pb-30" id="result">
+            @RenderPage("~/Shared/_Tour00.cshtml")
+            @RenderPage("~/Shared/_Tour01.cshtml")
+            @RenderPage("~/Shared/_Tour02.cshtml")
+            @RenderPage("~/Shared/_Tour03.cshtml")
+        </section>
+    </main>
+}

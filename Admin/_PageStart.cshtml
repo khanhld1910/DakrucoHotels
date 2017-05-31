@@ -1,0 +1,10 @@
+﻿@{ 
+    if (!WebSecurity.IsAuthenticated) {
+        Response.Redirect("~/Account/login");
+    };
+
+    if (!Roles.IsUserInRole(WebSecurity.CurrentUserName,
+          "Admin")) {
+        Response.Redirect("~/AdminError");
+    };
+}

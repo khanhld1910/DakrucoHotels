@@ -1,0 +1,113 @@
+﻿@{
+    Layout = "~/_NoHeader.cshtml";
+    PageData["Title"] = "Thêm trang mới";
+
+    var db = Database.Open("SiteDB");
+    var result = "";
+    var fileName = DateTimeOffset.Now.Ticks;
+
+    if (IsPost) {
+        var request = Request.Form["request"];
+        var queryCommand = "";
+        int commandResult = 0;
+        var title = Request.Form["title"];
+        var text = Request.Unvalidated().Form["text"];
+        int status = Request.Form["status"].AsInt();
+        //---------------
+        // kiem tra vao tao thu muc neu ko ton tai
+        var root = Server.MapPath("~/Posts/");
+        var foldername = DateTime.Now.Year + "/Thang" + DateTime.Now.Month + "/";
+        var path = Path.Combine(root, foldername);
+        if (!Directory.Exists(path)) {
+            Directory.CreateDirectory(path);
+        }
+        //---------------
+
+
+        var source = "~/Posts/" + foldername + fileName + ".cshtml";
+        var dataFile = Server.MapPath(source);
+        var now = DateTime.Now.ToShortDateString();
+
+        if (request == "new-page") {
+            queryCommand = "insert into page(title, date, url, source, status, category) " +
+                "values(@0, @1, @2, @3, @4, @5)";
+            commandResult = db.Execute(queryCommand, title, now, fileName, "/Posts/" + foldername + fileName, status, "post");
+        };
+
+
+        if (commandResult == 1) {
+            File.WriteAllText(@dataFile, text, System.Text.Encoding.UTF8);
+            result = "Tác vụ thành công";
+        } else {
+            result = "Tác vụ thất bại";
+        };
+    };
+}
+
+@section main {
+    <main id="adminbox">
+        <div class="admin-title">
+            <h3>@Page.Title</h3>
+        </div>
+        <div class="admin-toolbar row flex-start">
+            <div class="col s8 left-align" style="position: relative;">
+                <label for="ipt-title" class="inside-label">Tiêu đề</label>
+                <input id="ipt-title" type="text" class="label-inside" />
+            </div>
+            <div class="col left-align">
+                <a class="nav-item admin-tool-icon right-border" href="#">
+                    <i id="btn-draft" class="fa fa-archive admin-icon">
+                        <span>&nbsp;Lưu nháp</span>
+                    </i>
+                </a>
+                <a class="nav-item admin-tool-icon right-border" href="#">
+                    <i id="btn-postPage" class="fa fa-paper-plane-o admin-icon">
+                        <span>&nbsp;Đăng bài</span>
+                    </i>
+                </a>
+            </div>
+        </div>
+        <div id="page-edit-content">
+            <div class="admin-toolbar row flex-start">
+                <div id="font-format" class="page-edit-icon col border-right px-10">
+                    <span>Đoạn văn</span>
+                    <i class="fa fa-caret-down"></i>
+                    <ul id="font-format-ul" class="not-display format-ul">
+                        <li><p>Đoạn văn</p></li>
+                        <li><h1>Tiêu đề 1</h1></li>
+                        <li><h2>Tiêu đề 2</h2></li>
+                        <li><h3>Tiêu đề 3</h3></li>
+                        <li><h4>Tiêu đề 4</h4></li>
+                        <li><h5>Tiêu đề 5</h5></li>
+                        <li><h6>Tiêu đề 6</h6></li>
+                    </ul>
+                </div>
+                <div class="col">
+                    <i class="admin-icon fa fa-bold"></i>
+                    <i class="admin-icon fa fa-italic"></i>
+                    <i class="admin-icon fa fa-list-ul"></i>
+                    <i class="admin-icon fa fa-list-ol"></i>
+                    <i class="admin-icon fa fa-quote-left"></i>
+                    <i class="admin-icon fa fa-align-left"></i>
+                    <i class="admin-icon fa fa-align-justify"></i>
+                    <i class="admin-icon fa fa-align-right"></i>
+                    <i class="admin-icon fa fa-link"></i>
+                    <i class="admin-icon fa fa-unlink"></i>
+                    <i class="admin-icon fa fa-eraser"></i>
+                    <i class="admin-icon fa fa-image"></i>
+                    <i class="admin-icon fa fa-file-video-o"></i>
+                    <i class="admin-icon fa fa-youtube-play"></i>
+                </div>
+            </div>
+            <div id="edit-content">
+                <textarea id="txt-Content" class="edit-txtArea" name="post-content" placeholder="Nội dung"></textarea>
+                <div class="row" style="padding: 10px 20px; color: #C5CAE9;">
+                    <span id="spn-status"> >> @result</span>
+                </div>
+            </div>
+        </div>
+    </main>
+}
+@section Scripts {
+    <script src="~/Scripts/siteScripts/admin-pages.js"></script>
+}

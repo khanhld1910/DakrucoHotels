@@ -1,0 +1,11 @@
+﻿@{
+    Layout = "~/Shared/_SiteLayout.cshtml";
+    var db = Database.Open("SiteDB");
+    var status = db.QueryValue("select status from Page where source = @0;", @Request.FilePath);    
+    if (!Roles.IsUserInRole(WebSecurity.CurrentUserName, "Admin") && status != 1) {
+        // status !=1 nghia la trang dang trong trang thai draft hoac trong thung rac;
+        Response.Redirect("~/AdminError");
+    };
+    
+    //Page.status = (status);
+}
